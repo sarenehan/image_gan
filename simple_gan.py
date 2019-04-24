@@ -12,7 +12,7 @@ image_size = image_size[0] * image_size[1]
 d_learning_rate = 1e-3
 g_learning_rate = 1e-3
 sgd_momentum = 0.9
-num_epochs = 1000
+num_epochs = 200
 d_steps = 20
 g_steps = 20
 
@@ -121,3 +121,6 @@ for epoch in range(num_epochs):
             print(f'\tDiscriminator Error on Real Data: {dre}')
             print(f'\tDiscriminator Error on Fake Data: {dfe}')
             print(f'\tGenerator Error {ge}')
+
+torch.save(D, 'discriminator.pkl')
+torch.save(G, 'generator.pkl')
