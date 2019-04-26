@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from torch import nn
 import torch.optim as optim
@@ -12,7 +13,7 @@ image_size = image_size[0] * image_size[1]
 d_learning_rate = 1e-3
 g_learning_rate = 1e-3
 sgd_momentum = 0.9
-num_epochs = 200
+num_epochs = 1000
 d_steps = 20
 g_steps = 20
 
@@ -61,9 +62,12 @@ def extract(v):
     return v.data.storage().tolist()
 
 
-real_images = torch.from_numpy(load_training_data()).float()
+training_data = load_training_data()
+training_data = training_data[
+    np.random.choice(np.arange(len(training_data)), 1900)]
+real_images = torch.from_numpy(training_data).float()
 minibatch_size = int(len(real_images) / d_steps)
-G = Generator(1, hidden_layer_size, image_size, torch.sigmoid)
+G = Generator(1, hidden_layer_size, image_size, torch.tanh)
 D = Discriminator(
     image_size * minibatch_size, hidden_layer_size, 1, torch.sigmoid)
 criterion = nn.BCELoss()
@@ -81,9 +85,9 @@ for epoch in range(num_epochs):
         D.zero_grad()
         #  1A: Train D on real
         d_real_decision = D(d_real_data.view(-1))
-        # ones = real
+        # ones = rea
         d_real_error = criterion(
-            d_real_decision, Variable(torch.ones([1, 1])))
+            d_real_decision, Variable(torch.ones([1])))
         d_real_error.backward()
 
         #  1B: Train D on fake
@@ -93,7 +97,7 @@ for epoch in range(num_epochs):
         d_fake_decision = D(d_fake_data)
         # zeros = fake
         d_fake_error = criterion(
-            d_fake_decision, Variable(torch.zeros([1, 1])))
+            d_fake_decision, Variable(torch.zeros([1])))
         d_fake_error.backward()
         # Only optimizes D's parameters; changes based on stored gradients
         # from backward()
@@ -105,23 +109,23 @@ for epoch in range(num_epochs):
         # 2. Train G on D's response (but DO NOT train D on these labels)
         G.zero_grad()
 
-        gen_input = Variable(generator_sampler(minibatch_size)).view(-1)
+        gen_input = Variable(generator_sampler(minibatch_size))
         g_fake_data = G(gen_input)
-        dg_fake_decision = D(g_fake_data)
+        dg_fake_decision = D(g_fake_data.view(-1))
         # Train G to pretend it's genuine
         g_error = criterion(
-            dg_fake_decision, Variable(torch.ones([1, 1])))
+            dg_fake_decision, Variable(torch.ones([1])))
 
         g_error.backward()
         g_optimizer.step()  # Only optimizes G's parameters
         ge = extract(g_error)[0]
 
     if epoch % print_interval == 0:
-            print('\n\n')
-            print(f'Epoch {epoch}:')
-            print(f'\tDiscriminator Error on Real Data: {dre}')
-            print(f'\tDiscriminator Error on Fake Data: {dfe}')
-            print(f'\tGenerator Error {ge}')
+        print('\n\n')
+        print(f'Epoch {epoch}:')
+        print(f'\tDiscriminator Error on Real Data: {dre}')
+        print(f'\tDiscriminator Error on Fake Data: {dfe}')
+        print(f'\tGenerator Error {ge}')
 
 torch.save(D, 'discriminator.pkl')
 torch.save(G, 'generator.pkl')

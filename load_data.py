@@ -6,7 +6,7 @@ from scipy.ndimage import imread
 
 
 directory = '/Users/stewart/projects/image_gan/data/test2014_2'
-image_size = (128, 128)
+image_size = (64, 64)
 
 
 def get_image_filenames():
